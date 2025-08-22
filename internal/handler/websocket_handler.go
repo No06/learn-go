@@ -8,10 +8,10 @@ import (
 	"hinoob.net/learn-go/internal/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
-	gorilla_websocket "github.com/gorilla/websocket"
+	gorillaWebsocket "github.com/gorilla/websocket"
 )
 
-var wsUpgrader = gorilla_websocket.Upgrader{
+var wsUpgrader = gorillaWebsocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {

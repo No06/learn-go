@@ -7,7 +7,6 @@ import (
 	"hinoob.net/learn-go/internal/pkg/websocket"
 	"hinoob.net/learn-go/internal/repository"
 	"hinoob.net/learn-go/internal/router"
-	"hinoob.net/learn-go/internal/service"
 	"hinoob.net/learn-go/pkg/oss"
 )
 
@@ -25,11 +24,8 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// Create services
-	liveService := service.NewLiveService(hub)
-
 	// Set up router
-	r := router.SetupRouter(hub, liveService)
+	r := router.SetupRouter(hub)
 
 	// Start the server
 	port := config.AppConfig.Server.Port

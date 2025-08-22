@@ -1,17 +1,15 @@
 package router
 
 import (
+	"github.com/gin-gonic/gin"
 	"hinoob.net/learn-go/internal/handler"
 	"hinoob.net/learn-go/internal/middleware"
 	"hinoob.net/learn-go/internal/model"
 	"hinoob.net/learn-go/internal/pkg/websocket"
-	"hinoob.net/learn-go/internal/service"
-
-	"github.com/gin-gonic/gin"
 )
 
 // SetupRouter configures the routes for the application
-func SetupRouter(hub *websocket.Hub, liveService *service.LiveService) *gin.Engine {
+func SetupRouter(hub *websocket.Hub) *gin.Engine {
 	router := gin.Default()
 
 	// Health check and WebSocket endpoints
@@ -32,9 +30,6 @@ func SetupRouter(hub *websocket.Hub, liveService *service.LiveService) *gin.Engi
 		authGroup := apiV1.Group("")
 		authGroup.Use(middleware.AuthMiddleware())
 		{
-			// Initialize handlers that depend on services
-			liveHandler := handler.NewLiveHandler(liveService)
-
 			// Upload route
 			authGroup.POST("/upload", handler.UploadFileHandler)
 
@@ -59,13 +54,6 @@ func SetupRouter(hub *websocket.Hub, liveService *service.LiveService) *gin.Engi
 				timetableRoutes.POST("/slots", middleware.RoleAuthMiddleware(string(model.TeacherRole)), handler.CreateTimeSlotHandler)
 				timetableRoutes.POST("/courses", middleware.RoleAuthMiddleware(string(model.TeacherRole)), handler.CreateCourseHandler)
 				timetableRoutes.GET("", handler.GetTimetableHandler)
-			}
-
-			// Live Stream routes
-			liveRoutes := authGroup.Group("/live")
-			{
-				liveRoutes.POST("/:courseId/start", middleware.RoleAuthMiddleware(string(model.TeacherRole)), liveHandler.StartStreamHandler)
-				liveRoutes.POST("/:courseId/end", middleware.RoleAuthMiddleware(string(model.TeacherRole)), liveHandler.EndStreamHandler)
 			}
 
 			// Submission routes (for grading)
