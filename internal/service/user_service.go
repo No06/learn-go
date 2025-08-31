@@ -2,16 +2,15 @@ package service
 
 import (
 	"errors"
-
-	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/pkg/utils"
-	"hinoob.net/learn-go/internal/repository"
-
 	"gorm.io/gorm"
+	"hinoob.net/learn-go/internal/model"
+	"hinoob.net/learn-go/internal/pkg/hash"
+	"hinoob.net/learn-go/internal/pkg/jwt"
+	"hinoob.net/learn-go/internal/repository"
 )
 
 // CreateUser handles the business logic for creating a user
-func CreateUser(username, password, fullName string, role model.Role, teacherIDs []uint) (*model.User, error) {
+func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []uint) (*model.User, error) {
 	// 1. Check if user already exists
 	_, err := repository.GetUserByUsername(username)
 	if err == nil {
@@ -22,10 +21,10 @@ func CreateUser(username, password, fullName string, role model.Role, teacherIDs
 		return nil, err
 	}
 
-	// 2. Hash the password
-	hashedPassword, err := utils.HashPassword(password)
+	// 2. Hash the hash
+	hashedPassword, err := hash.HashPassword(pass)
 	if err != nil {
-		return nil, errors.New("failed to hash password")
+		return nil, errors.New("failed to hash hash")
 	}
 
 	// 3. Create the user object
@@ -66,7 +65,7 @@ func CreateUser(username, password, fullName string, role model.Role, teacherIDs
 }
 
 // Login handles the user login logic
-func Login(username, password string) ( /* token */ string, *model.User, error) {
+func Login(username, pass string) ( /* token */ string, *model.User, error) {
 	// 1. Find user by username
 	user, err := repository.GetUserByUsername(username)
 	if err != nil {
@@ -76,13 +75,13 @@ func Login(username, password string) ( /* token */ string, *model.User, error) 
 		return "", nil, err
 	}
 
-	// 2. Check password
-	if !utils.CheckPasswordHash(password, user.PasswordHash) {
-		return "", nil, errors.New("invalid password")
+	// 2. Check hash
+	if !hash.CheckPasswordHash(pass, user.PasswordHash) {
+		return "", nil, errors.New("invalid hash")
 	}
 
 	// 3. Generate JWT token
-	token, err := utils.GenerateToken(user.ID, user.Username, string(user.Role))
+	token, err := jwt.GenerateToken(user.ID, user.Username, string(user.Role))
 	if err != nil {
 		return "", nil, errors.New("failed to generate token")
 	}

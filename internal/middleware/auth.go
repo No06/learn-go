@@ -1,10 +1,9 @@
 package middleware
 
 import (
+	"hinoob.net/learn-go/internal/pkg/jwt"
 	"net/http"
 	"strings"
-
-	"hinoob.net/learn-go/internal/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +33,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
-		claims, err := utils.ParseToken(tokenString)
+		claims, err := jwt.ParseToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()

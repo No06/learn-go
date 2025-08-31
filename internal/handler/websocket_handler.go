@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"hinoob.net/learn-go/internal/pkg/jwt"
 	"log"
 	"net/http"
 
-	"hinoob.net/learn-go/internal/pkg/utils"
 	"hinoob.net/learn-go/internal/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +30,7 @@ func ServeWs(hub *websocket.Hub, c *gin.Context) {
 		return
 	}
 
-	claims, err := utils.ParseToken(tokenString)
+	claims, err := jwt.ParseToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
