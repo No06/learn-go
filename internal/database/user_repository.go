@@ -1,4 +1,4 @@
-package repository
+package database
 
 import "hinoob.net/learn-go/internal/model"
 

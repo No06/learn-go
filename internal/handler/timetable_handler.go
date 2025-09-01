@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/middleware"
 	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/repository"
 	"hinoob.net/learn-go/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -73,14 +73,14 @@ func GetTimetableHandler(c *gin.Context) {
 	var err error
 
 	if role == string(model.TeacherRole) {
-		courses, err = repository.GetCoursesByTeacher(userID)
+		courses, err = database.GetCoursesByTeacher(userID)
 	} else {
 		// This requires getting the student's class. This is a missing piece.
 		// We need to be able to find which class a student belongs to.
 		// For now, we will leave this part unimplemented.
-		// student, err := repository.GetUserWithClass(userID)
+		// student, err := database.GetUserWithClass(userID)
 		// if err == nil {
-		// 	courses, err = repository.GetCoursesByClass(student.ClassID)
+		// 	courses, err = database.GetCoursesByClass(student.ClassID)
 		// }
 		courses = make([]model.Course, 0)
 	}

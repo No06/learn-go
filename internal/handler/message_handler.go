@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/middleware"
-	"hinoob.net/learn-go/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,8 +22,8 @@ func GetMessageHistoryHandler(c *gin.Context) {
 	// 2. Get the logged-in user's ID from the context
 	currentUserID := c.GetUint(middleware.ContextUserIDKey)
 
-	// 3. Fetch the messages from the repository
-	messages, err := repository.GetMessagesBetweenUsers(currentUserID, uint(otherUserID))
+	// 3. Fetch the messages from the database
+	messages, err := database.GetMessagesBetweenUsers(currentUserID, uint(otherUserID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve message history"})
 		return

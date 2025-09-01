@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/middleware"
 	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/repository"
 	"hinoob.net/learn-go/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -69,7 +69,7 @@ func GetAssignmentsHandler(c *gin.Context) {
 	var err error
 
 	if role == string(model.TeacherRole) {
-		assignments, err = repository.GetAssignmentsByTeacherID(userID)
+		assignments, err = database.GetAssignmentsByTeacherID(userID)
 	} else {
 		// TODO: Implement logic for students to get assignments
 		// This would involve checking their class/teacher associations.
@@ -111,7 +111,7 @@ func GetSubmissionsForAssignmentHandler(c *gin.Context) {
 
 	// Optional: Add a check to ensure the requesting teacher owns the assignment
 
-	submissions, err := repository.GetSubmissionsByAssignmentID(uint(assignmentID))
+	submissions, err := database.GetSubmissionsByAssignmentID(uint(assignmentID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve submissions"})
 		return

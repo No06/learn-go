@@ -5,10 +5,10 @@ server:
 
 # Database settings (PostgreSQL)
 database:
-  host: "localhost"
+  host: "192.168.1.101"
   port: "5432"
-  user: "learngo"
-  password: "learngo"
+  user: "postgres"
+  password: "postgres"
   dbname: "learngo"
   sslmode: "disable"
 

@@ -7,8 +7,8 @@ package websocket
 import (
 	"encoding/json"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/repository"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -57,7 +57,7 @@ func (h *Hub) Run() {
 			}
 		case message := <-h.DirectMessage:
 			// 1. Save the message to the database
-			repository.CreateMessage(message)
+			database.CreateMessage(message)
 
 			// 2. Forward the message to the recipient if they are online
 			if client, ok := h.Clients[message.RecipientID]; ok {

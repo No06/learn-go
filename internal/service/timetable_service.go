@@ -1,8 +1,8 @@
 package service
 
 import (
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/repository"
 )
 
 // --- TimeSlot Services ---
@@ -15,7 +15,7 @@ func CreateTimeSlot(name, startTime, endTime string) (*model.TimeSlot, error) {
 		StartTime: startTime,
 		EndTime:   endTime,
 	}
-	err := repository.CreateTimeSlot(timeSlot)
+	err := database.CreateTimeSlot(timeSlot)
 	return timeSlot, err
 }
 
@@ -30,6 +30,6 @@ func CreateCourseForTeacher(subject string, classID, teacherID, timeSlotID uint,
 		TimeSlotID:  timeSlotID,
 		DayOfWeek:   dayOfWeek,
 	}
-	err := repository.CreateCourse(course)
+	err := database.CreateCourse(course)
 	return course, err
 }

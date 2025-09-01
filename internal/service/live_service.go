@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/model"
 	"hinoob.net/learn-go/internal/pkg/websocket"
-	"hinoob.net/learn-go/internal/repository"
 )
 
 // LiveService handles the business logic for live streaming.
@@ -22,7 +22,7 @@ func NewLiveService(hub *websocket.Hub) *LiveService {
 // It creates a chat room and notifies all students in the class.
 func (s *LiveService) StartStreamForCourse(courseID uint, teacherID uint) error {
 	// 1. Validate that the teacher is actually teaching this course
-	course, err := repository.GetCourseByID(courseID) // This function needs to be created
+	course, err := database.GetCourseByID(courseID) // This function needs to be created
 	if err != nil {
 		return errors.New("course not found")
 	}
@@ -36,7 +36,7 @@ func (s *LiveService) StartStreamForCourse(courseID uint, teacherID uint) error 
 	}
 
 	// 3. Notify students in the class
-	class, err := repository.GetClassByID(course.ClassID)
+	class, err := database.GetClassByID(course.ClassID)
 	if err != nil {
 		return errors.New("class not found for the course")
 	}

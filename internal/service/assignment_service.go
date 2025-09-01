@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/model"
-	"hinoob.net/learn-go/internal/repository"
 )
 
 // --- Assignment Services ---
@@ -17,7 +17,7 @@ func CreateAssignmentForTeacher(title, description string, dueDate time.Time, te
 		DueDate:     dueDate,
 		CreatedByID: teacherID,
 	}
-	err := repository.CreateAssignment(assignment)
+	err := database.CreateAssignment(assignment)
 	return assignment, err
 }
 
@@ -31,7 +31,7 @@ func CreateOrUpdateSubmission(assignmentID, studentID uint, content string, file
 		StudentID:    studentID,
 		Content:      content,
 	}
-	if err := repository.CreateSubmission(submission); err != nil {
+	if err := database.CreateSubmission(submission); err != nil {
 		return nil, err
 	}
 
@@ -46,26 +46,26 @@ func CreateOrUpdateSubmission(assignmentID, studentID uint, content string, file
 		}
 		// This is not the most efficient way (multiple inserts).
 		// A better approach for production would be a bulk insert.
-		if err := repository.CreateSubmissionFiles(files); err != nil {
+		if err := database.CreateSubmissionFiles(files); err != nil {
 			// In a real app, you might want to roll back the submission creation here.
 			return nil, err
 		}
 	}
 
-	return repository.GetSubmissionByID(submission.ID)
+	return database.GetSubmissionByID(submission.ID)
 }
 
 // GradeAndCommentOnSubmission handles the logic for a teacher grading a submission.
 func GradeAndCommentOnSubmission(submissionID, teacherID uint, grade, commentText string, isImage bool) (*model.Submission, error) {
 	// 1. Get the submission
-	submission, err := repository.GetSubmissionByID(submissionID)
+	submission, err := database.GetSubmissionByID(submissionID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. Update the grade
 	submission.Grade = grade
-	if err := repository.UpdateSubmission(submission); err != nil {
+	if err := database.UpdateSubmission(submission); err != nil {
 		return nil, err
 	}
 
@@ -77,11 +77,11 @@ func GradeAndCommentOnSubmission(submissionID, teacherID uint, grade, commentTex
 			Content:      commentText,
 			IsImage:      isImage,
 		}
-		if err := repository.CreateComment(comment); err != nil {
+		if err := database.CreateComment(comment); err != nil {
 			return nil, err
 		}
 	}
 
 	// 4. Return the updated submission with all comments
-	return repository.GetSubmissionByID(submissionID)
+	return database.GetSubmissionByID(submissionID)
 }

@@ -3,16 +3,16 @@ package service
 import (
 	"errors"
 	"gorm.io/gorm"
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/model"
 	"hinoob.net/learn-go/internal/pkg/hash"
 	"hinoob.net/learn-go/internal/pkg/jwt"
-	"hinoob.net/learn-go/internal/repository"
 )
 
 // CreateUser handles the business logic for creating a user
 func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []uint) (*model.User, error) {
 	// 1. Check if user already exists
-	_, err := repository.GetUserByUsername(username)
+	_, err := database.GetUserByUsername(username)
 	if err == nil {
 		return nil, errors.New("username already exists")
 	}
@@ -36,7 +36,7 @@ func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []u
 	}
 
 	// 4. Save the user to the database
-	if err := repository.CreateUser(user); err != nil {
+	if err := database.CreateUser(user); err != nil {
 		return nil, err
 	}
 
@@ -44,7 +44,7 @@ func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []u
 	if user.IsStudent() && len(teacherIDs) > 0 {
 		var teachers []*model.User
 		for _, teacherID := range teacherIDs {
-			teacher, err := repository.GetUserByID(teacherID)
+			teacher, err := database.GetUserByID(teacherID)
 			if err != nil {
 				// In a real app, you might want to handle this more gracefully
 				// (e.g., log a warning, or fail the whole transaction)
@@ -55,7 +55,7 @@ func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []u
 			}
 		}
 		if len(teachers) > 0 {
-			if err := repository.AssignTeachersToStudent(user, teachers); err != nil {
+			if err := database.AssignTeachersToStudent(user, teachers); err != nil {
 				return nil, err
 			}
 		}
@@ -67,7 +67,7 @@ func CreateUser(username, pass, fullName string, role model.Role, teacherIDs []u
 // Login handles the user login logic
 func Login(username, pass string) ( /* token */ string, *model.User, error) {
 	// 1. Find user by username
-	user, err := repository.GetUserByUsername(username)
+	user, err := database.GetUserByUsername(username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil, errors.New("user not found")

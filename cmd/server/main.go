@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"hinoob.net/learn-go/internal/config"
+	"hinoob.net/learn-go/internal/database"
 	"hinoob.net/learn-go/internal/pkg/websocket"
-	"hinoob.net/learn-go/internal/repository"
 	"hinoob.net/learn-go/internal/router"
 	"hinoob.net/learn-go/pkg/oss"
 )
@@ -15,7 +15,7 @@ func main() {
 	config.LoadConfig("./configs")
 
 	// Initialize database
-	repository.InitDB()
+	database.InitDB()
 
 	// Initialize OSS Client
 	oss.InitOSS()
