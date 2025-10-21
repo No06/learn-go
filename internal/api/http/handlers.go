@@ -75,7 +75,6 @@ func (h *Handler) RegisterRoutes(r *gin.Engine, adminGuard gin.HandlerFunc, teac
 
 		assignments := api.Group("/assignments", teacherGuard)
 		assignments.POST("", h.CreateAssignment)
-		assignments.GET(":id", h.GetAssignment)
 		assignments.GET(":id/submissions", h.ListAssignmentSubmissions)
 		assignments.GET(":id/submissions/:submissionID", h.GetAssignmentSubmission)
 		assignments.PATCH(":id/submissions/:submissionID/grade", h.GradeSubmission)

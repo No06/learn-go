@@ -28,17 +28,17 @@ DROP TABLE IF EXISTS schools CASCADE;
 
 -- Core reference tables ------------------------------------------------------
 CREATE TABLE schools (
-    id          UUID PRIMARY KEY,
+    id          CHAR(36) PRIMARY KEY,
     name        VARCHAR(128) UNIQUE NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE accounts (
-    id            UUID PRIMARY KEY,
-    school_id     UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    school_id     CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
     role          VARCHAR(16) NOT NULL,
-    identifier    VARCHAR(64) NOT NULL UNIQUE,
+    identifier    VARCHAR(64) NOT NULL,
     password_hash VARCHAR(128) NOT NULL,
     display_name  VARCHAR(128) NOT NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,62 +46,77 @@ CREATE TABLE accounts (
     deleted_at    TIMESTAMPTZ
 );
 
+ALTER TABLE accounts
+    ADD CONSTRAINT "uni_accounts_identifier" UNIQUE (identifier);
+
 CREATE INDEX accounts_role_idx ON accounts(role);
 CREATE INDEX accounts_school_idx ON accounts(school_id);
 
 CREATE TABLE departments (
-    id         UUID PRIMARY KEY,
-    school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    school_id  CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
     name       VARCHAR(128) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE classes (
-    id            UUID PRIMARY KEY,
-    school_id     UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-    department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    school_id     CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    department_id CHAR(36) NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
     name          VARCHAR(128) NOT NULL,
-    homeroom_id   UUID,
+    homeroom_id   CHAR(36),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE teachers (
-    id         UUID PRIMARY KEY,
-    school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-    account_id UUID NOT NULL UNIQUE REFERENCES accounts(id) ON DELETE CASCADE,
-    number     VARCHAR(64) NOT NULL UNIQUE,
+    id         CHAR(36) PRIMARY KEY,
+    school_id  CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    account_id CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    number     VARCHAR(64) NOT NULL,
     email      VARCHAR(128) NOT NULL,
     phone      VARCHAR(32),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE teachers
+    ADD CONSTRAINT "uni_teachers_account_id" UNIQUE (account_id);
+
+ALTER TABLE teachers
+    ADD CONSTRAINT "uni_teachers_number" UNIQUE (number);
 
 CREATE TABLE students (
-    id         UUID PRIMARY KEY,
-    school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-    account_id UUID NOT NULL UNIQUE REFERENCES accounts(id) ON DELETE CASCADE,
-    number     VARCHAR(64) NOT NULL UNIQUE,
-    class_id   UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    school_id  CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    account_id CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    number     VARCHAR(64) NOT NULL,
+    class_id   CHAR(36) NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     email      VARCHAR(128) NOT NULL,
     phone      VARCHAR(32),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE students
+    ADD CONSTRAINT "uni_students_account_id" UNIQUE (account_id);
+
+ALTER TABLE students
+    ADD CONSTRAINT "uni_students_number" UNIQUE (number);
+
 CREATE TABLE teacher_student_links (
-    id         UUID PRIMARY KEY,
-    teacher_id UUID NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    teacher_id CHAR(36) NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+    student_id CHAR(36) NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (teacher_id, student_id)
+    CONSTRAINT "uni_teacher_student_links_teacher_id_student_id" UNIQUE (teacher_id, student_id)
 );
 
 -- Course/assignment tables ---------------------------------------------------
 CREATE TABLE courses (
-    id          UUID PRIMARY KEY,
-    school_id   UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    id          CHAR(36) PRIMARY KEY,
+    school_id   CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
     name        VARCHAR(128) NOT NULL,
     description VARCHAR(512),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -109,10 +124,10 @@ CREATE TABLE courses (
 );
 
 CREATE TABLE assignments (
-    id             UUID PRIMARY KEY,
-    course_id      UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    teacher_id     UUID NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-    class_id       UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    id             CHAR(36) PRIMARY KEY,
+    course_id      CHAR(36) NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    teacher_id     CHAR(36) NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+    class_id       CHAR(36) NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     type           VARCHAR(16) NOT NULL,
     title          VARCHAR(256) NOT NULL,
     description    VARCHAR(1024),
@@ -125,8 +140,8 @@ CREATE TABLE assignments (
 );
 
 CREATE TABLE assignment_questions (
-    id            UUID PRIMARY KEY,
-    assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    assignment_id CHAR(36) NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     type          VARCHAR(16) NOT NULL,
     prompt        TEXT NOT NULL,
     options       TEXT,
@@ -136,9 +151,9 @@ CREATE TABLE assignment_questions (
 );
 
 CREATE TABLE assignment_submissions (
-    id            UUID PRIMARY KEY,
-    assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
-    student_id    UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    assignment_id CHAR(36) NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_id    CHAR(36) NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     submitted_at  TIMESTAMPTZ,
     score         NUMERIC(6,2),
     feedback      TEXT,
@@ -150,17 +165,17 @@ CREATE TABLE assignment_submissions (
 CREATE UNIQUE INDEX assignment_submissions_unique ON assignment_submissions(assignment_id, student_id);
 
 CREATE TABLE submission_items (
-    id            UUID PRIMARY KEY,
-    submission_id UUID NOT NULL REFERENCES assignment_submissions(id) ON DELETE CASCADE,
-    question_id   UUID NOT NULL REFERENCES assignment_questions(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    submission_id CHAR(36) NOT NULL REFERENCES assignment_submissions(id) ON DELETE CASCADE,
+    question_id   CHAR(36) NOT NULL REFERENCES assignment_questions(id) ON DELETE CASCADE,
     answer        TEXT,
     score         NUMERIC(6,2)
 );
 
 CREATE TABLE submission_comments (
-    id            UUID PRIMARY KEY,
-    submission_id UUID NOT NULL REFERENCES assignment_submissions(id) ON DELETE CASCADE,
-    author_id     UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id            CHAR(36) PRIMARY KEY,
+    submission_id CHAR(36) NOT NULL REFERENCES assignment_submissions(id) ON DELETE CASCADE,
+    author_id     CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     author_role   VARCHAR(16) NOT NULL,
     content       TEXT NOT NULL,
     attachment_uri VARCHAR(256),
@@ -169,26 +184,26 @@ CREATE TABLE submission_comments (
 
 -- Conversation/messaging tables ---------------------------------------------
 CREATE TABLE conversations (
-    id         UUID PRIMARY KEY,
+    id         CHAR(36) PRIMARY KEY,
     type       VARCHAR(16) NOT NULL,
-    school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    school_id  CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE conversation_members (
-    id              UUID PRIMARY KEY,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    account_id      UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id              CHAR(36) PRIMARY KEY,
+    conversation_id CHAR(36) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    account_id      CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     role            VARCHAR(16) NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (conversation_id, account_id)
 );
 
 CREATE TABLE messages (
-    id              UUID PRIMARY KEY,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id       UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id              CHAR(36) PRIMARY KEY,
+    conversation_id CHAR(36) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id       CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     sender_role     VARCHAR(16) NOT NULL,
     kind            VARCHAR(16) NOT NULL,
     text            TEXT,
@@ -198,9 +213,9 @@ CREATE TABLE messages (
 );
 
 CREATE TABLE message_receipts (
-    id         UUID PRIMARY KEY,
-    message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    message_id CHAR(36) NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    account_id CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     read_at    TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (message_id, account_id)
@@ -208,9 +223,9 @@ CREATE TABLE message_receipts (
 
 -- Notes ---------------------------------------------------------------------
 CREATE TABLE notes (
-    id         UUID PRIMARY KEY,
-    school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-    owner_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    school_id  CHAR(36) NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    owner_id   CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     owner_role VARCHAR(16) NOT NULL,
     title      VARCHAR(256) NOT NULL,
     content    TEXT NOT NULL,
@@ -222,9 +237,9 @@ CREATE TABLE notes (
 );
 
 CREATE TABLE note_comments (
-    id         UUID PRIMARY KEY,
-    note_id    UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    author_id  UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id         CHAR(36) PRIMARY KEY,
+    note_id    CHAR(36) NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    author_id  CHAR(36) NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     author_role VARCHAR(16) NOT NULL,
     content    TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -236,9 +251,12 @@ INSERT INTO schools (id, name) VALUES
 
 INSERT INTO accounts (id, school_id, role, identifier, password_hash, display_name)
 VALUES
-    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'admin',   'admin001',   '$2a$10$examplehashedpasswordadmin', '校区管理员'),
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'teacher', 'tch-1001',   '$2a$10$examplehashedpasswordteach', '李老师'),
-    ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'student', 'stu-2025001', '$2a$10$examplehashedpasswordstud', '张三');
+    -- admin001 / Admin@123
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'admin',   'admin001',   '$2a$10$r55hZB6LyJ6858Y7V31ReOp.E7zQ/uVnmT0rok7UG3WiH6iH4mNbW', '校区管理员'),
+    -- tch-1001 / Teacher@123
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'teacher', 'tch-1001',   '$2a$10$HsCf6BKbYMzXQR.VXtE9Z.9hry4fFdiPotuLxW9o./KCfB2kOvnDm', '李老师'),
+    -- stu-2025001 / Student@123
+    ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'student', 'stu-2025001', '$2a$10$8/0qgqABMO7pYcPxTVGHX.S6ezGYUFuIUgzvQVNMDAxHcYexgBhz2', '张三');
 
 INSERT INTO departments (id, school_id, name) VALUES
     ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', '信息工程系');
