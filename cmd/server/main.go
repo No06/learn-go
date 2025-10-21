@@ -1,36 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
-	"hinoob.net/learn-go/internal/config"
-	"hinoob.net/learn-go/internal/database"
-	"hinoob.net/learn-go/internal/pkg/websocket"
-	"hinoob.net/learn-go/internal/router"
-	"hinoob.net/learn-go/pkg/oss"
+	"learn-go/internal/app"
 )
 
 func main() {
-	// Load configuration
-	config.LoadConfig("./configs")
+	application, err := app.New()
+	if err != nil {
+		log.Fatalf("failed to initialize application: %v", err)
+	}
 
-	// Initialize database
-	database.InitDB()
-
-	// Initialize OSS Client
-	oss.InitOSS()
-
-	// Create and run the websocket hub
-	hub := websocket.NewHub()
-	go hub.Run()
-
-	// Set up router
-	r := router.SetupRouter(hub)
-
-	// Start the server
-	port := config.AppConfig.Server.Port
-	fmt.Printf("Server is running on port %s\n", port)
-	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
-		panic(fmt.Sprintf("Failed to start server: %v", err))
+	if err := application.Run(); err != nil {
+		log.Fatalf("application terminated: %v", err)
 	}
 }

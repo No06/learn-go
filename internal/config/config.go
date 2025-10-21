@@ -1,80 +1,101 @@
 package config
 
 import (
-	"github.com/spf13/viper"
+	"fmt"
 	"log"
-	"time"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/joho/godotenv"
 )
 
-// Config holds the application's configuration
-type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	Redis    RedisConfig
-	OSS      OSSConfig
+// AppConfig holds runtime configuration flags.
+type AppConfig struct {
+	AppName         string
+	Environment     string
+	HTTPPort        string
+	DatabaseDriver  string
+	DatabaseDSN     string
+	JWTSecret       string
+	RefreshSecret   string
+	TokenTTL        int64
+	RefreshTokenTTL int64
+	OssEndpoint     string
+	OssAccessKey    string
+	OssSecretKey    string
+	OssBucket       string
 }
 
-// ServerConfig holds server settings
-type ServerConfig struct {
-	Port string
-	Mode string
+var (
+	cfg  AppConfig
+	once sync.Once
+)
+
+// Load reads configuration from environment variables. It is safe for concurrent use.
+func Load() AppConfig {
+	once.Do(func() {
+		loadDotEnv()
+
+		cfg = AppConfig{
+			AppName:         getEnv("APP_NAME", "LearnGo"),
+			Environment:     getEnv("APP_ENV", "local"),
+			HTTPPort:        getEnv("HTTP_PORT", "8080"),
+			DatabaseDriver:  getEnv("DATABASE_DRIVER", "sqlite"),
+			DatabaseDSN:     getEnv("DATABASE_DSN", "file:learn-go.db?cache=shared&_foreign_keys=on"),
+			JWTSecret:       mustEnv("JWT_SECRET"),
+			RefreshSecret:   mustEnv("REFRESH_SECRET"),
+			TokenTTL:        getEnvAsInt64("TOKEN_TTL", 3600),
+			RefreshTokenTTL: getEnvAsInt64("REFRESH_TOKEN_TTL", 2592000),
+			OssEndpoint:     getEnv("OSS_ENDPOINT", ""),
+			OssAccessKey:    getEnv("OSS_ACCESS_KEY", ""),
+			OssSecretKey:    getEnv("OSS_SECRET_KEY", ""),
+			OssBucket:       getEnv("OSS_BUCKET", ""),
+		}
+	})
+
+	return cfg
 }
 
-// DatabaseConfig holds database settings
-type DatabaseConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-}
-
-// JWTConfig holds JWT settings
-type JWTConfig struct {
-	Secret      string
-	Issuer      string
-	ExpireHours time.Duration
-}
-
-// RedisConfig holds Redis settings
-type RedisConfig struct {
-	Addr     string
-	Password string
-	DB       int
-}
-
-// OSSConfig holds Alibaba Cloud OSS settings
-type OSSConfig struct {
-	Endpoint        string
-	AccessKeyID     string
-	AccessKeySecret string
-	BucketName      string
-}
-
-var AppConfig *Config
-
-// LoadConfig loads configuration from file and environment variables
-func LoadConfig(path string) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
+func loadDotEnv() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Printf("config: unable to determine working directory: %v", err)
+		return
 	}
 
-	var config Config
-	if err := viper.Unmarshal(&config); err != nil {
-		log.Fatalf("Failed to unmarshal config: %v", err)
+	for _, candidate := range []string{".env", filepath.Join(cwd, "config", ".env")} {
+		if _, err := os.Stat(candidate); err == nil {
+			if err := godotenv.Load(candidate); err != nil {
+				log.Printf("config: unable to load %s: %v", candidate, err)
+			}
+		}
 	}
+}
 
-	// Post-process JWT expiration
-	config.JWT.ExpireHours = time.Duration(viper.GetInt("jwt.expire_hours")) * time.Hour
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
-	AppConfig = &config
-	log.Println("Configuration loaded successfully.")
+func getEnvAsInt64(key string, fallback int64) int64 {
+	if value, ok := os.LookupEnv(key); ok {
+		var parsed int64
+		_, err := fmt.Sscan(value, &parsed)
+		if err == nil {
+			return parsed
+		}
+		log.Printf("config: unable to parse %s=%s as int64: %v", key, value, err)
+	}
+	return fallback
+}
+
+func mustEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("config: missing required environment variable %s", key)
+	}
+	return value
 }
